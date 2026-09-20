@@ -6,6 +6,7 @@ from telegram import Update
 from telegram.ext import Application, MessageHandler, filters
 from process_image import process_image
 
+# Токен берем из переменных среды
 TOKEN = os.environ.get('TELEGRAM_TOKEN')
 
 async def handle_any(update, context):
