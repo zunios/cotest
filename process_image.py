@@ -6,7 +6,7 @@ e  = 2.718281828459045
 def process_image(data):
     # Open and resize
     img = Image.open(data).convert("RGBA")
-    x, y, wx, wy = 6, 5, 12, 13
+    x, wx, y, wy = 12, 6, 5, 13
     target_w, target_h = 512 - x - wx, 512 - y - wy
     img.thumbnail((target_w, target_h), Image.LANCZOS)
     alpha = img.split()[-1]
