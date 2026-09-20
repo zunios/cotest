@@ -1,4 +1,4 @@
-from PIL import Image, ImageFilter, ImageChops
+from PIL import Image, ImageFilter
 
 pi = 3.141592653589793
 e  = 2.718281828459045
@@ -6,56 +6,54 @@ e  = 2.718281828459045
 def process_image(data):
     # Open and resize
     img = Image.open(data).convert("RGBA")
-    target_w, target_h = 512 - 6 - 12, 512 - 5 - 13
+    x, y, wx, wy = 6, 5, 12, 13
+    target_w, target_h = 512 - x - wx, 512 - y - wy
     img.thumbnail((target_w, target_h), Image.LANCZOS)
-
+    alpha = img.split()[-1]
+    alpha = alpha.point(lambda a: max(0, 4*a - 765))
+    # img.putalpha(alpha); return img
     # Place on white canvas
     canvas = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
-    x, y = 6, 5
-    canvas.paste(img, (x, y), img)
+    canvas.paste(img, (x, y), alpha)
+    sharpened = canvas.filter(ImageFilter.UnsharpMask(radius=1, percent=100, threshold=0))
 
     # Build alpha mask on full canvas
-    alpha_canvas = Image.new("L", (512, 512), 0)
-    alpha_canvas.paste(img.split()[-1], (x, y))
+    luma = Image.new("L", (512, 512), 0)
+    luma.paste(alpha, (x, y))
+
 
     r = 5 # size
     # Gaussian stroke
     k = .4
-    b1 = 8 # 89% spread
+    b1 = 8 # ~89% spread
     b2 = 0
     expanded = (
-        alpha_canvas
-            .point(lambda p: 255*min(max(128 + 5 * (p - 128), 0), 1)) # sharpen original edges
+        luma.point(lambda p: 255*min(max(128 + 5 * (p - 128), 0), 1)) # sharpen original edges
             .filter(ImageFilter.GaussianBlur(k*r))
             .point(lambda p: 255*min(max((p - b2) / (b1 - b2), 0), 1)) # convert blur to stroke
             .convert("L")
     )
 
     # square-max stroke
-    # expanded = alpha_canvas.filter(ImageFilter.MaxFilter(r*2+1))
+    # expanded = luma.filter(ImageFilter.MaxFilter(r*2+1))
 
-    sharpened = canvas.filter(ImageFilter.UnsharpMask(radius=1, percent=100, threshold=0))
     sharpened.putalpha(expanded)
-    # expanded.paste(img, (x,y), img)
+
 
     # Shadow
-    r = 10 # size
-    dx = 3 # 2.5 = 5 * cos(120deg)
-    dy = 4 # 4.3 = 5 * sin(120deg)
-    pad = 0#2*r
-    shadow = Image.new("L", (512+2*pad, 512+2*pad), 0)
-    shadow.putalpha(expanded)
-    shadow = ImageChops.offset(shadow, pad+dx, pad+dy).filter(ImageFilter.GaussianBlur(r))
+    r = 4 # size
+    dx = -4 # -4.3 ≈ -5 * cos(30deg)
+    dy = 3 # 2.5 = 5 * sin(30deg)
+    pad = 2*r
+    shadow_padded = Image.new("L", (512+2*pad, 512+2*pad), 0)
+    shadow_padded.paste(alpha, (x+pad, y+pad))
+    shadow_padded = shadow_padded.filter(ImageFilter.GaussianBlur(r))
 
-    # # Shadow: from stroke band, blurred, with offset
-    # shadow_alpha = stroke_band.filter(ImageFilter.GaussianBlur(10))
-    # shadow_layer = Image.new("RGBA", (512, 512), (0, 0, 0, 150))
-    # shadow_layer.putalpha(shadow_alpha)
+    shadow_luma = Image.new("L", (512, 512), 0)
+    shadow_luma.paste(shadow_padded, (-pad + dx, -pad + dy))
 
-    # # Compose in correct order: shadow → stroke → image
-    # composed = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
-    # composed.paste(shadow_layer, (x+5, y+5), shadow_layer)  # offset shadow
-    # composed = Image.alpha_composite(composed, stroke_layer)
-    # composed = Image.alpha_composite(composed, canvas)
+    shadow = Image.new("L", (512, 512), 0)
+    shadow.putalpha(shadow_luma.point(lambda a: int(a * 0.25))) # 25% opacity
 
-    return shadow
+    # final compositing
+    return Image.alpha_composite(shadow.convert("RGBA"), sharpened)
