@@ -4,7 +4,7 @@ import asyncio
 import functions_framework
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters
-from .process_image import process_image
+from process_image import process_image
 
 TOKEN = os.environ.get('TELEGRAM_TOKEN')
 
