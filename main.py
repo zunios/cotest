@@ -2,8 +2,9 @@ import os
 import io
 import asyncio
 import functions_framework
-from telegram import Update
+from telegram import Update, InputFile
 from telegram.ext import Application, MessageHandler, filters
+from telegram.error import BadRequest
 from process_image import process_image
 
 # Токен берем из переменных среды
