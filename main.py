@@ -31,15 +31,21 @@ async def handle_any(update, context):
     data = io.BytesIO(await file.download_as_bytearray())
     composed = process_image(data)
     output = io.BytesIO()
-    composed.save(output, format="PNG")
+    composed.save(output, format="WEBP")
     output.seek(0)
-    await update.message.reply_photo(photo=output)
+    await update.message.reply_document(
+        document=output,
+        filename="sticker.webp"
+    )
 
 async def process_update(request_json):
     """Инициализируем локальное приложение под конкретный запрос"""
     # Создаем экземпляр строго внутри асинхронного цикла
     app = Application.builder().token(TOKEN).build()
-    app.add_handler(MessageHandler(filters.ALL, handle_any))
+
+    app.add_handler(MessageHandler(filters.ALL, handle_any)) # filters.TEXT & ~filters.COMMAND
+    # app.add_handler(CommandHandler("create", create_pack))
+    # app.add_handler(CommandHandler("add", add_sticker))
     
     async with app:
         # Инициализируем внутренние компоненты PTB
@@ -47,6 +53,8 @@ async def process_update(request_json):
         update = Update.de_json(data=request_json, bot=app.bot)
         await app.process_update(update)
         await app.shutdown()
+
+
 
 @functions_framework.http
 def telegram_webhook(request):
