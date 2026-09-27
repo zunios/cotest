@@ -37,15 +37,16 @@ async def handle_any(update, context):
     composed.save(output, format="PNG")
     output.seek(0)
 
-
     user_id = OWNER_USER_ID  # update.effective_user.id
-    pack_name = "aksdjfghklsjdfhgkjadfhgksdf"
-    pack_title = pack_name
+    bot_user_id = context.bot.username
+    pack_title = "aksdjfghklsjdfhgkjadfhgksdf"
+    pack_name = f"{pack_title}_by_{bot_user_id}"
 
     # Create sticker
     sticker_uploaded = await context.bot.upload_sticker_file(
         user_id=user_id,
-        png_sticker=InputFile(output, filename="sticker.png")
+        sticker=InputFile(output, filename="sticker.png"),
+        sticker_format="static"
     )
 
     sticker = InputSticker(
@@ -65,8 +66,8 @@ async def handle_any(update, context):
             name=pack_name,
             sticker=sticker
         )
-        update.message.reply_text("Sticker \\o/")
 
+        sticker_set = await context.bot.get_sticker_set(pack_name)
         await update.message.reply_sticker(sticker_set.stickers[-1].file_id)
     except BadRequest as e:
         if e.message == "Stickerset_invalid":
@@ -79,7 +80,7 @@ async def handle_any(update, context):
                 title=pack_title,
                 stickers=[sticker]
             )
-            await update.message.reply_text(f"Created pack https://t.me/addstickers/{set_name}")
+            await update.message.reply_text(f"Created pack https://t.me/addstickers/{pack_name}")
         else:
             await update.message.reply_text(f"Error: {e.message}")
 
