@@ -2,7 +2,7 @@ import os
 import io
 import asyncio
 import functions_framework
-from telegram import Update, InputFile
+from telegram import Update, InputFile, InputSticker
 from telegram.ext import Application, MessageHandler, filters
 from telegram.error import BadRequest
 from process_image import process_image
@@ -36,6 +36,8 @@ async def handle_any(update, context):
     composed.save(output, format="PNG")
     output.seek(0)
 
+    sticker = InputSticker(InputFile(output, filename="sticker.png"), emojis="🐈‍⬛")
+
     user_id = OWNER_USER_ID # update.effective_user.id
     pack_name = "aksdjfghklsjdfhgkjadfhgksdf"
     pack_title = pack_name
@@ -47,8 +49,7 @@ async def handle_any(update, context):
         context.bot.add_sticker_to_set(
             user_id=user_id,
             name=pack_name,
-            png_sticker=InputFile(output, filename="sticker.png"),
-            emojis="🐈‍⬛"
+            sticker=sticker
         )
         update.message.reply_text("Sticker \\o/")
 
@@ -62,8 +63,7 @@ async def handle_any(update, context):
                 user_id=user_id,
                 name=pack_name,
                 title=pack_title,
-                png_sticker=InputFile(output, filename="sticker.png"),
-                emojis="🐈‍⬛"
+                stickers=[sticker]
             )
             update.message.reply_text(f"Created pack https://t.me/addstickers/{set_name}")
         else:
