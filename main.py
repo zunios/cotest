@@ -37,15 +37,24 @@ async def handle_any(update, context):
     composed.save(output, format="PNG")
     output.seek(0)
 
-    sticker = InputSticker(
-        sticker=InputFile(output, filename="sticker.png"),
-        emoji_list=["🐈‍⬛"],
-        format="static"
-    )
 
     user_id = OWNER_USER_ID  # update.effective_user.id
     pack_name = "aksdjfghklsjdfhgkjadfhgksdf"
     pack_title = pack_name
+
+    # Create sticker
+    sticker_uploaded = await context.bot.upload_sticker_file(
+        user_id=user_id,
+        png_sticker=InputFile(output, filename="sticker.png")
+    )
+
+    sticker = InputSticker(
+        sticker=sticker_uploaded.file_id,
+        emoji_list=["🐈‍⬛"],
+        format="static"
+    )
+
+    # Add to/make a pack
 
     try:
         # add sticker to existing pack
