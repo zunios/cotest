@@ -36,7 +36,7 @@ async def handle_any(update, context):
     composed.save(output, format="PNG")
     output.seek(0)
 
-    sticker = InputSticker(InputFile(output, filename="sticker.png"), emojis="🐈‍⬛")
+    sticker = InputSticker(InputFile(output, filename="sticker.png"), emoji_list=["🐈‍⬛"])
 
     user_id = OWNER_USER_ID # update.effective_user.id
     pack_name = "aksdjfghklsjdfhgkjadfhgksdf"
