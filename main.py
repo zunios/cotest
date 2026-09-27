@@ -11,10 +11,11 @@ from process_image import process_image
 TOKEN = os.environ.get('TELEGRAM_TOKEN')
 OWNER_USER_ID = os.environ.get('TELEGRAM_USER_ID')
 
+
 async def handle_any(update, context):
     if not update.message:
         return
-        
+
     if update.message.document:
         print("doc")
         doc = update.message.document
@@ -37,44 +38,44 @@ async def handle_any(update, context):
     output.seek(0)
 
     sticker = InputSticker(
-        InputFile(output, filename="sticker.png"),
+        sticker=InputFile(output, filename="sticker.png"),
         emoji_list=["🐈‍⬛"],
         format="static"
     )
 
-    user_id = OWNER_USER_ID # update.effective_user.id
+    user_id = OWNER_USER_ID  # update.effective_user.id
     pack_name = "aksdjfghklsjdfhgkjadfhgksdf"
     pack_title = pack_name
 
     try:
         # add sticker to existing pack
-        sticker_set = context.bot.get_sticker_set(pack_name)
+        sticker_set = await context.bot.get_sticker_set(pack_name)
 
-        context.bot.add_sticker_to_set(
+        await context.bot.add_sticker_to_set(
             user_id=user_id,
             name=pack_name,
             sticker=sticker
         )
         update.message.reply_text("Sticker \\o/")
 
-        update.message.reply_sticker(sticker_set.stickers[-1].file_id)
+        await update.message.reply_sticker(sticker_set.stickers[-1].file_id)
     except BadRequest as e:
-        if "STICKERSET_INVALID" in str(e):
+        if e.message == "Stickerset_invalid":
 
             # create new sticker set
 
-            context.bot.create_new_sticker_set(
+            await context.bot.create_new_sticker_set(
                 user_id=user_id,
                 name=pack_name,
                 title=pack_title,
                 stickers=[sticker]
             )
-            update.message.reply_text(f"Created pack https://t.me/addstickers/{set_name}")
+            await update.message.reply_text(f"Created pack https://t.me/addstickers/{set_name}")
         else:
-            update.message.reply_text(f"Error: {e.message}")
+            await update.message.reply_text(f"Error: {e.message}")
 
+    # await update.message.reply_photo(photo=output)
 
-    await update.message.reply_photo(photo=output)
 
 async def process_update(request_json):
     """Инициализируем локальное приложение под конкретный запрос"""
@@ -83,13 +84,14 @@ async def process_update(request_json):
     app.add_handler(MessageHandler(filters.ALL, handle_any))
     # app.add_handler(CommandHandler("create", create_pack))
     # app.add_handler(CommandHandler("add", add))
-    
+
     async with app:
         # Инициализируем внутренние компоненты PTB
         await app.initialize()
         update = Update.de_json(data=request_json, bot=app.bot)
         await app.process_update(update)
         await app.shutdown()
+
 
 @functions_framework.http
 def telegram_webhook(request):
@@ -99,5 +101,5 @@ def telegram_webhook(request):
         if request_json:
             # Запускаем обработку события в изолированном цикле
             asyncio.run(process_update(request_json))
-            
+
     return 'ok', 200
