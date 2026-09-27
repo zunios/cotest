@@ -8,6 +8,7 @@ from process_image import process_image
 
 # Токен берем из переменных среды
 TOKEN = os.environ.get('TELEGRAM_TOKEN')
+OWNER_USER_ID = os.environ.get('TELEGRAM_USER_ID')
 
 async def handle_any(update, context):
     if not update.message:
@@ -33,6 +34,41 @@ async def handle_any(update, context):
     output = io.BytesIO()
     composed.save(output, format="PNG")
     output.seek(0)
+
+    user_id = OWNER_USER_ID # update.effective_user.id
+    pack_name = "aksdjfghklsjdfhgkjadfhgksdf"
+    pack_title = pack_name
+
+    try:
+        # add sticker to existing pack
+        sticker_set = context.bot.get_sticker_set(pack_name)
+
+        context.bot.add_sticker_to_set(
+            user_id=user_id,
+            name=pack_name,
+            png_sticker=InputFile(output, filename="sticker.png"),
+            emojis="🐈‍⬛"
+        )
+        update.message.reply_text("Sticker \\o/")
+
+        update.message.reply_sticker(sticker_set.stickers[-1].file_id)
+    except BadRequest as e:
+        if "STICKERSET_INVALID" in str(e):
+
+            # create new sticker set
+
+            context.bot.create_new_sticker_set(
+                user_id=user_id,
+                name=pack_name,
+                title=pack_title,
+                png_sticker=InputFile(output, filename="sticker.png"),
+                emojis="🐈‍⬛"
+            )
+            update.message.reply_text(f"Created pack https://t.me/addstickers/{set_name}")
+        else:
+            update.message.reply_text(f"Error: {e.message}")
+
+
     await update.message.reply_photo(photo=output)
 
 async def process_update(request_json):
@@ -40,6 +76,8 @@ async def process_update(request_json):
     # Создаем экземпляр строго внутри асинхронного цикла
     app = Application.builder().token(TOKEN).build()
     app.add_handler(MessageHandler(filters.ALL, handle_any))
+    # app.add_handler(CommandHandler("create", create_pack))
+    # app.add_handler(CommandHandler("add", add))
     
     async with app:
         # Инициализируем внутренние компоненты PTB
